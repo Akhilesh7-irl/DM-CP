@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Wine / Burgundy ── */
+  --color-wine-50: #FCF5F6;
+  --color-wine-100: #F5E1E5;
+  --color-wine-200: #E8BFC6;
+  --color-wine-300: #D6939F;
+  --color-wine-400: #C06878;
+  --color-wine-500: #9E3A4D;
+  --color-wine-600: #7C2D3E;
+  --color-wine-700: #642434;
+  --color-wine-800: #4C1B28;
+  --color-wine-900: #35121C;
+
+  /* ── Sage / Olive ── */
+  --color-sage-50: #F3F6F2;
+  --color-sage-100: #E2EAE0;
+  --color-sage-200: #C5D5C0;
+  --color-sage-300: #A3BB9C;
+  --color-sage-400: #7FA076;
+  --color-sage-500: #5B7553;
+  --color-sage-600: #4A6044;
+  --color-sage-700: #3A4B36;
+  --color-sage-800: #2A3728;
+  --color-sage-900: #1B241A;
+
+  /* ── Warm Amber ── */
+  --color-amber-50: #FDF7EE;
+  --color-amber-100: #F8E9D0;
+  --color-amber-200: #F0D2A1;
+  --color-amber-300: #E4B66E;
+  --color-amber-400: #D49A42;
+  --color-amber-500: #C17C2A;
+  --color-amber-600: #A06523;
+  --color-amber-700: #7F4F1C;
+  --color-amber-800: #5F3B15;
+  --color-amber-900: #40280E;
+
+  /* ── Terracotta ── */
+  --color-terra-50: #FBF0EE;
+  --color-terra-100: #F3D5D0;
+  --color-terra-200: #E5ABA1;
+  --color-terra-300: #D17D6F;
+  --color-terra-400: #C45A49;
+  --color-terra-500: #B84233;
+  --color-terra-600: #983629;
+  --color-terra-700: #782B21;
+  --color-terra-800: #582019;
+  --color-terra-900: #3B1510;
+
+  /* ── Cream / Neutrals ── */
+  --color-cream-50: #FEFDFB;
+  --color-cream-100: #FBF8F3;
+  --color-cream-200: #F3EDE4;
+  --color-cream-300: #E8E2D9;
+  --color-cream-400: #D5CEC3;
+  --color-cream-500: #B8B0A4;
+  --color-cream-600: #9A9186;
+  --color-cream-700: #6B635B;
+  --color-cream-800: #453F3A;
+  --color-cream-900: #2D2926;
+
+  /* ── Risk Tier Colors ── */
+  --color-risk-safe: #5B7553;
+  --color-risk-safe-bg: #E2EAE0;
+  --color-risk-review: #C17C2A;
+  --color-risk-review-bg: #F8E9D0;
+  --color-risk-investigate: #B84233;
+  --color-risk-investigate-bg: #F3D5D0;
+
+  /* ── Pillar Colors ── */
+  --color-pillar-gnn: #5B7553;
+
+  /* ── Surface ── */
+  --color-surface-primary: #FBF8F3;
+  --color-surface-secondary: #F3EDE4;
+  --color-surface-elevated: #FFFFFF;
+
+  /* ── Typography ── */
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface-primary);
+  color: var(--color-cream-900);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-cream-200);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-cream-500);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cream-600);
+}
