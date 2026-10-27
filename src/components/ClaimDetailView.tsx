@@ -39,7 +39,7 @@ function formatPercent(value: any) {
 
 /**
  * ClaimDetailView — AgriGuard Deep-Dive Detail Inspector
- * Presents GNN graph topology findings alongside the symbolic inference logical proof.
+ * Presents claim network findings alongside the symbolic inference logical proof.
  */
 export function ClaimDetailView() {
   const { state, selectClaim, togglePinClaim, setInvestigatorNotes } = useClaims();
@@ -71,7 +71,7 @@ export function ClaimDetailView() {
         <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-md text-left">
           <div className="p-3.5 rounded-lg bg-white border border-[#E8E2D9]">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#5B7553] uppercase tracking-wider">
-              <Network className="h-3.5 w-3.5" /> GNN Network Topology
+              <Network className="h-3.5 w-3.5" /> Claim Network Topology
             </div>
             <p className="text-[11px] text-[#9A928A] mt-1">HeteroGraphSAGE relational links & shared adjuster hubs</p>
           </div>
@@ -200,16 +200,13 @@ export function ClaimDetailView() {
           <div className="rounded-xl border border-[#B84233]/20 bg-[#B84233]/5 p-4 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A928A]">
-                Calibrated Risk Score
+                Risk Score
               </span>
               <Activity className="h-4 w-4 text-[#B84233]" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="font-mono text-3xl font-extrabold text-[#B84233]">
                 {formatPercent(riskScore.composite)}
-              </span>
-              <span className="text-xs font-mono text-[#9A928A]">
-                ({formatPercent(riskScore.confidence)} confidence)
               </span>
             </div>
             <div className="mt-2 w-full bg-[#E8E2D9] h-2 rounded-full overflow-hidden">
@@ -226,10 +223,10 @@ export function ClaimDetailView() {
               Claimed Indemnity Value
             </span>
             <div className="mt-2 font-mono text-2xl font-bold text-[#2D2926]">
-              {formatInr(metadata.claimAmountUsd)}
+              {formatInr(metadata.claimAmountInr)}
             </div>
             <p className="text-[11px] text-[#9A928A] mt-1 font-mono">
-              Policy Liability: {formatInr(metadata.policyValueUsd)}
+              Estimated Coverage: {formatInr(metadata.policyValueInr)}
             </p>
           </div>
 
@@ -259,7 +256,7 @@ export function ClaimDetailView() {
               </div>
               <div className="flex items-center gap-1 text-[11px] font-mono text-[#9A928A]">
                 <MapPin className="h-3.5 w-3.5 text-[#5B7553]" />
-                <span>PMFBY Farmland Parcel ({metadata.parcel.insuredAcres} ac) • District: {metadata.parcel.stateAbbrev} • Taluka: {metadata.parcel.countyFips}</span>
+                <span>PMFBY Farmland Parcel ({metadata.parcel.insuredAcres} ac) • District: {metadata.parcel.district} • Taluka: {metadata.parcel.taluka}</span>
               </div>
             </div>
           </div>
@@ -274,14 +271,14 @@ export function ClaimDetailView() {
               <span>Deductive & Topological Explainability</span>
             </h3>
             <span className="text-xs text-[#9A928A] font-mono">
-              HeteroGraphSAGE GNN • Classical Symbolic Inference (9 Laws)
+              Graph risk score • Classical Symbolic Inference (9 Laws)
             </span>
           </div>
 
           <div className="grid grid-cols-1 gap-6">
 
             {/* ═════════════════════════════════════════════════════════════════
-                PILLAR 1: GNN NETWORK ANOMALIES (Graph connections, shared adjusters)
+                PILLAR 1: NETWORK SIGNALS (Graph connections, shared adjusters)
                ═════════════════════════════════════════════════════════════════ */}
             <div className="rounded-xl border border-[#E8E2D9] bg-white p-5 shadow-sm space-y-4 relative overflow-hidden">
               <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#5B7553]" />
@@ -294,7 +291,7 @@ export function ClaimDetailView() {
                   </div>
                   <div>
                     <h4 className="font-serif font-bold text-base text-[#2D2926] flex items-center gap-2">
-                      1. GNN Network Topology Findings
+                      1. Claim Network Topology Findings
                     </h4>
                     <p className="text-xs text-[#9A928A] font-mono">
                       Graph Neural Topology • Shared Adjusters • Spatial Clustering
@@ -353,7 +350,7 @@ export function ClaimDetailView() {
 
                     <div>
                       <span className="text-[10px] font-mono uppercase text-[#9A928A] block">
-                        GNN Cluster ID
+                        Zone Cluster ID
                       </span>
                       <span className="inline-block mt-1 font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-[#5B7553]/10 text-[#5B7553]">
                         {gnnAnomaly.communityClusterId || 'N/A'}
@@ -363,7 +360,7 @@ export function ClaimDetailView() {
                 </div>
               ) : (
                 <p className="text-xs text-[#9A928A] italic">
-                  No structural network anomalies flagged by GNN graph analysis.
+                  No precomputed network signal is attached to this claim.
                 </p>
               )}
             </div>
@@ -480,7 +477,7 @@ export function ClaimDetailView() {
           />
 
           <div className="flex items-center justify-between text-[11px] text-[#9A928A] font-mono pt-1">
-            <span>Audit Trail Engine: AgriGuard GNN + Symbolic Logic</span>
+            <span>Audit Trail Engine: AgriGuard Risk Scores + Symbolic Logic</span>
             <span>CLU: {metadata.parcel.cluTractId}</span>
           </div>
         </div>

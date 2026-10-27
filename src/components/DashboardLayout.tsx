@@ -4,7 +4,7 @@
 // Palette: Wine/Burgundy, Sage Olive, Warm Amber, Deep Terracotta, Cream
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useClaims } from '../context/ClaimsContext';
 import {
   formatInr,
@@ -24,8 +24,11 @@ import {
   Activity,
   Layers,
   Minimize2,
+  Download,
+  RefreshCw,
 } from 'lucide-react';
 import { NetworkGraphPanel } from './NetworkGraphPanel';
+import { AnalyticsPanel } from './AnalyticsPanel';
 
 
 
@@ -44,15 +47,27 @@ export function DashboardLayout() {
     toggleNetworkPanel,
     togglePinClaim,
     setInvestigatorNotes,
+    refetchClaims,
   } = useClaims();
 
   const [activeTab, setActiveTab] = useState<'claims' | 'analytics' | 'network'>('claims');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [tablePage, setTablePage] = useState(0);
+  const pageSize = 50;
+  const visibleClaims = filteredClaims.slice(tablePage * pageSize, (tablePage + 1) * pageSize);
+  useEffect(() => setTablePage(0), [state.filters]);
 
   // Active filter state variables
   const currentSearch = state.filters.searchQuery;
   const activeTiers = state.filters.tiers;
   const isAllTiersActive = activeTiers.length === 0;
+  const exportClaims = () => {
+    const columns = ['Claim ID','Policy','Producer','Assessor','District','Taluka','Crop','Peril','Claim amount INR','Risk score','Triage','Rule flag'];
+    const rows = filteredClaims.map((c) => [c.metadata.claimId,c.metadata.policyNumber,c.metadata.farmerName,c.metadata.assessorName,c.metadata.parcel.district,c.metadata.parcel.taluka,c.metadata.cropType,c.metadata.perilType,c.metadata.claimAmountInr,c.riskScore.composite * 100,c.riskScore.tier,c.riskFlag ?? 0]);
+    const csv = [columns, ...rows].map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"','""')}"`).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'agriguard-claims.csv'; anchor.click(); URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#FBF8F3] text-[#2D2926] font-sans antialiased select-none">
@@ -119,11 +134,11 @@ export function DashboardLayout() {
               }`}
             >
               <Network size={16} className={activeTab === 'network' ? 'text-white/80' : 'text-[#C17C2A]'} />
-              {!sidebarCollapsed && <span>GNN Topology</span>}
+              {!sidebarCollapsed && <span>Claim Network</span>}
             </button>
 
             <button
-              onClick={() => setActiveTab('analytics')}
+              onClick={() => { setActiveTab('analytics'); toggleDetailPanel(false); toggleNetworkPanel(false); }}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                 activeTab === 'analytics'
                   ? 'bg-[#7C2D3E] text-white shadow-sm'
@@ -174,19 +189,19 @@ export function DashboardLayout() {
           {!sidebarCollapsed ? (
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span>RMA Feed:</span>
-                <span className="text-[#5B7553] font-semibold flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#5B7553] animate-pulse"></span>
-                  CONNECTED
+                <span>Portfolio:</span>
+                <span className="text-[#C17C2A] font-semibold flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#C17C2A]"></span>
+                  PORTFOLIO
                 </span>
               </div>
               <div className="text-[10px] text-[#6B635B]/60">
-                Synced: 2026-09-03 20:07 UTC
+                Portfolio records
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <span className="h-2 w-2 rounded-full bg-[#5B7553]" title="RMA Connected"></span>
+              <span className="h-2 w-2 rounded-full bg-[#5B7553]" title="Illustrative portfolio data"></span>
             </div>
           )}
         </div>
@@ -199,7 +214,7 @@ export function DashboardLayout() {
           {/* Breadcrumb & Title */}
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium uppercase text-[#6B635B] tracking-wider">
-              FCIC RMA Portfolio /
+              PMFBY Portfolio /
             </span>
             <h2 className="font-serif text-base font-bold text-[#2D2926]">
               Fraud Risk Assessment & Triage Workspace
@@ -221,6 +236,8 @@ export function DashboardLayout() {
 
             {/* Layout Toggle Actions */}
             <div className="flex items-center gap-1.5">
+              <button onClick={exportClaims} className="rounded-full border border-[#E8E2D9] bg-white p-2 text-[#6B635B] hover:text-[#2D2926]" title="Export filtered claims as CSV"><Download size={14} /></button>
+              <button onClick={refetchClaims} className="rounded-full border border-[#E8E2D9] bg-white p-2 text-[#6B635B] hover:text-[#2D2926]" title="Reload portfolio claims"><RefreshCw size={14} /></button>
               <button
                 onClick={() => toggleDetailPanel()}
                 className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -242,12 +259,13 @@ export function DashboardLayout() {
                 }`}
               >
                 <Network size={14} />
-                <span>GNN Graph</span>
+                <span>Claim Network</span>
               </button>
             </div>
           </div>
         </header>
 
+        {activeTab === 'analytics' ? <AnalyticsPanel claims={filteredClaims} /> : <>
         {/* Filter & Toolbar Row */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E8E2D9] bg-[#E8E2D9]/40 px-6 py-2.5">
           {/* Search Box */}
@@ -256,13 +274,13 @@ export function DashboardLayout() {
             <input
               type="text"
               value={currentSearch}
-              onChange={(e) => updateFilters({ searchQuery: e.target.value })}
-              placeholder="Search Claim ID, Producer Name, Assessor, District, Taluka..."
+              onChange={(e) => { setTablePage(0); updateFilters({ searchQuery: e.target.value }); }}
+              placeholder="Search claim, producer, assessor, district, taluka, crop, peril..."
               className="w-full rounded-full border border-[#E8E2D9] bg-white pl-9 pr-3 py-1.5 text-xs text-[#2D2926] placeholder-[#6B635B]/50 focus:border-[#7C2D3E] focus:outline-none focus:ring-1 focus:ring-[#7C2D3E]/30"
             />
             {currentSearch && (
               <button
-                onClick={() => updateFilters({ searchQuery: '' })}
+                onClick={() => { setTablePage(0); updateFilters({ searchQuery: '' }); }}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6B635B] hover:text-[#2D2926]"
               >
                 <X size={12} />
@@ -382,7 +400,7 @@ export function DashboardLayout() {
                       <th
                         className="py-3 px-4 font-semibold text-right cursor-pointer hover:text-[#2D2926] tracking-wider"
                         onClick={() => {
-                          setSort('claimAmountUsd');
+                          setSort('claimAmountInr');
                           toggleSortDirection();
                         }}
                       >
@@ -402,14 +420,14 @@ export function DashboardLayout() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredClaims.map((claim, rowIdx) => {
+                    {visibleClaims.map((claim, rowIdx) => {
                       const isSelected = selectedClaim?.metadata.claimId === claim.metadata.claimId;
                       const gnnCount = claim.anomalies.filter((a) => a.pillar === 'gnn').length;
 
                       return (
                         <tr
                           key={claim.metadata.claimId}
-                          onClick={() => selectClaim(claim.metadata.claimId)}
+                          onClick={() => { setActiveTab('claims'); selectClaim(claim.metadata.claimId); }}
                           className={`cursor-pointer transition-colors border-b border-[#E8E2D9]/60 ${
                             isSelected
                               ? 'bg-[#7C2D3E]/5 hover:bg-[#7C2D3E]/8'
@@ -444,24 +462,23 @@ export function DashboardLayout() {
                           {/* Producer & Assessor */}
                           <td className="py-3.5 px-4">
                             <div className="font-medium text-[#2D2926]">{claim.metadata.farmerName}</div>
-                            <div className="text-[10px] text-[#6B635B]">
-                              Adj: {claim.metadata.assessorName}
-                            </div>
+                            <div className="text-[10px] text-[#6B635B]">{claim.metadata.parcel.taluka}, {claim.metadata.parcel.district}</div>
+                            <div className="text-[10px] text-[#6B635B]">Assessor: {claim.metadata.assessorName}</div>
                           </td>
 
                           {/* Crop & Peril */}
                           <td className="py-3.5 px-4">
                             <div className="font-medium text-[#2D2926]">{claim.metadata.cropType}</div>
-                            <div className="text-[10px] text-[#6B635B]">{claim.metadata.perilType}</div>
+                            <div className="text-[10px] text-[#6B635B]">{claim.metadata.perilType} · {claim.metadata.claimedDamagePct}% reported loss</div>
                           </td>
 
                           {/* Indemnity Amount */}
                           <td className="py-3.5 px-4 text-right">
                             <div className="font-mono font-bold text-[#2D2926]">
-                              {formatInr(claim.metadata.claimAmountUsd)}
+                              {formatInr(claim.metadata.claimAmountInr)}
                             </div>
                             <div className="text-[10px] font-mono text-[#6B635B]">
-                              Policy: {formatInr(claim.metadata.policyValueUsd)}
+                              Est. coverage: {formatInr(claim.metadata.policyValueInr)}
                             </div>
                           </td>
 
@@ -488,9 +505,9 @@ export function DashboardLayout() {
                               {gnnCount > 0 && (
                                 <span
                                   className="rounded-full bg-[#5B7553]/10 text-[#5B7553] px-2 py-0.5 font-semibold"
-                                  title="GNN Anomaly"
+                                  title="Precomputed risk signal"
                                 >
-                                  GNN:{gnnCount}
+                                  Signal:{gnnCount}
                                 </span>
                               )}
                               {claim.rulesFired && claim.rulesFired.length > 0 && (
@@ -507,7 +524,7 @@ export function DashboardLayout() {
                           {/* Inspect Action */}
                           <td className="py-3.5 px-4 text-right pr-5" onClick={(e) => e.stopPropagation()}>
                             <button
-                              onClick={() => selectClaim(claim.metadata.claimId)}
+                              onClick={() => { setActiveTab('claims'); selectClaim(claim.metadata.claimId); }}
                               className="rounded-full border border-[#E8E2D9] bg-white px-3 py-1.5 text-[11px] font-medium text-[#6B635B] hover:border-[#7C2D3E] hover:bg-[#7C2D3E]/5 hover:text-[#7C2D3E] transition-colors"
                             >
                               Inspect →
@@ -518,6 +535,10 @@ export function DashboardLayout() {
                     })}
                   </tbody>
                 </table>
+                <div className="flex items-center justify-between border-t border-[#E8E2D9] bg-white px-4 py-3 text-xs text-[#6B635B]">
+                  <span>{filteredClaims.length ? `${tablePage * pageSize + 1}–${Math.min((tablePage + 1) * pageSize, filteredClaims.length)} of ${filteredClaims.length.toLocaleString('en-IN')}` : '0 claims'}</span>
+                  <div className="flex gap-2"><button disabled={tablePage === 0} onClick={() => setTablePage((page) => Math.max(0, page - 1))} className="rounded-full border border-[#E8E2D9] px-3 py-1 disabled:opacity-40">Previous</button><button disabled={(tablePage + 1) * pageSize >= filteredClaims.length} onClick={() => setTablePage((page) => page + 1)} className="rounded-full border border-[#E8E2D9] px-3 py-1 disabled:opacity-40">Next</button></div>
+                </div>
               </div>
             )}
           </main>
@@ -574,7 +595,7 @@ export function DashboardLayout() {
                     </div>
 
                     {/* Quick Metadata Summary Grid */}
-                    <div className="grid grid-cols-3 gap-4 mt-5 pt-4 border-t border-[#E8E2D9] text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-5 pt-4 border-t border-[#E8E2D9] text-xs">
                       <div>
                         <span className="text-[10px] text-[#6B635B] uppercase block mb-0.5 tracking-wider">Producer</span>
                         <span className="font-semibold text-[#2D2926]">{selectedClaim.metadata.farmerName}</span>
@@ -585,14 +606,16 @@ export function DashboardLayout() {
                       </div>
                       <div>
                         <span className="text-[10px] text-[#6B635B] uppercase block mb-0.5 tracking-wider">Indemnity Claim</span>
-                        <span className="font-mono font-bold text-[#B84233]">
-                          {formatInr(selectedClaim.metadata.claimAmountUsd)}
-                        </span>
+                        <span className="font-mono font-bold text-[#B84233]">{formatInr(selectedClaim.metadata.claimAmountInr)}</span>
                       </div>
+                      <div><span className="text-[10px] text-[#6B635B] uppercase block mb-0.5 tracking-wider">Reported Loss</span><span className="font-semibold">{selectedClaim.metadata.claimedDamagePct}% · {selectedClaim.metadata.perilType}</span></div>
+                      <div><span className="text-[10px] text-[#6B635B] uppercase block mb-0.5 tracking-wider">Farm Location</span><span className="font-semibold">{selectedClaim.metadata.parcel.taluka}, {selectedClaim.metadata.parcel.district}</span></div>
+                      <div><span className="text-[10px] text-[#6B635B] uppercase block mb-0.5 tracking-wider">Area / Weather Zone</span><span className="font-semibold">{selectedClaim.metadata.parcel.insuredAcres} ac · {selectedClaim.metadata.parcel.cluTractId}</span></div>
+                      <div><span className="text-[10px] text-[#6B635B] uppercase block mb-0.5 tracking-wider">Reported / Inspected</span><span className="font-mono">{selectedClaim.metadata.lossReportDate} / {selectedClaim.metadata.inspectionDate}</span></div>
                     </div>
                   </div>
 
-                  {/* Risk Breakdown: GNN + Symbolic Logic */}
+                  {/* Risk Breakdown: precomputed score + symbolic logic */}
                   <div className="px-6 py-5 space-y-4 border-b border-[#E8E2D9]">
                     <h4 className="font-serif text-sm font-bold text-[#2D2926]">
                       Risk Engine Breakdown
@@ -603,7 +626,7 @@ export function DashboardLayout() {
                       <div className="rounded-xl border border-[#E8E2D9] bg-white p-4 text-center shadow-sm">
                         <div className="w-1 h-6 bg-[#5B7553] rounded-full mx-auto mb-2"></div>
                         <span className="text-[10px] font-semibold text-[#5B7553] uppercase block tracking-wider">
-                          GNN Graph Risk
+                          Graph Risk Score
                         </span>
                         <span className="font-mono text-xl font-bold text-[#2D2926] mt-1 block">
                           {formatRiskPercent(selectedClaim.riskScore.pillars.gnn.raw)}
@@ -634,6 +657,14 @@ export function DashboardLayout() {
                     </div>
                   </div>
 
+                  <div className="px-6 py-5 space-y-3 border-b border-[#E8E2D9]">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-serif text-sm font-bold text-[#2D2926]">Discrete Mathematics proof trace</h4>
+                      <span className="text-[10px] text-[#6B635B]">Premise-based deductions</span>
+                    </div>
+                    {selectedClaim.proofTrace.length ? <ol className="space-y-2">{selectedClaim.proofTrace.map((step, index) => <li key={`${index}-${step}`} className="flex gap-3 rounded-lg bg-[#FBF8F3] p-3 text-xs leading-relaxed text-[#6B635B]"><span className="font-mono font-bold text-[#7C2D3E]">{String(index + 1).padStart(2, '0')}</span><span>{step}</span></li>)}</ol> : <p className="rounded-lg bg-[#FBF8F3] p-3 text-xs text-[#6B635B]">No configured inference rule fired. This is not a proof that the claim is risk-free.</p>}
+                  </div>
+
                   {/* Anomaly Explainability Cards */}
                   <div className="px-6 py-5 space-y-4 border-b border-[#E8E2D9]">
                     <div className="flex items-center justify-between">
@@ -641,7 +672,7 @@ export function DashboardLayout() {
                         Explainable Findings ({selectedClaim.anomalies.length})
                       </h4>
                       <span className="text-[11px] font-mono text-[#5B7553] font-bold">
-                        GNN Topological
+                        Risk score
                       </span>
                     </div>
 
@@ -659,7 +690,7 @@ export function DashboardLayout() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#5B7553]/10 text-[#5B7553]">
-                              GNN • {anomaly.severity}
+                              Risk score • {anomaly.severity}
                             </span>
                           </div>
 
@@ -686,7 +717,7 @@ export function DashboardLayout() {
                       onChange={(e) =>
                         setInvestigatorNotes(selectedClaim.metadata.claimId, e.target.value)
                       }
-                      placeholder="Add investigation findings, NOAA radar cross-checks, or referral notes..."
+                      placeholder="Add case notes for this claim..."
                       className="w-full rounded-xl border border-[#E8E2D9] p-3 text-xs text-[#2D2926] placeholder-[#6B635B]/40 focus:border-[#7C2D3E] focus:outline-none focus:ring-1 focus:ring-[#7C2D3E]/20"
                     ></textarea>
                   </div>
@@ -711,6 +742,7 @@ export function DashboardLayout() {
           )}
 
         </div>
+        </>}
       </div>
     </div>
   );

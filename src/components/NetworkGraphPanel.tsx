@@ -13,7 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 /**
  * Deterministic string hash for position seeding (no Math.random)
@@ -131,6 +131,7 @@ export function NetworkGraphPanel({
 
     let isMounted = true;
     setIsLoading(true);
+    setNetworkGraph(null);
 
     fetch(`${API_BASE_URL}/claims/${claimId}/network`)
       .then((res) => {
@@ -608,7 +609,7 @@ export function NetworkGraphPanel({
                       selectClaim(node.id);
                     }
                   }}
-                  className="cursor-pointer transition-transform hover:scale-110"
+                  className="cursor-pointer"
                 >
                   {/* Outer Pulsing Glow for High Risk / Assessor Hub */}
                   {(isAssessorHub || isSelected || isHovered) && (
